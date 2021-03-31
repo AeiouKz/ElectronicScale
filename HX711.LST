@@ -1,0 +1,129 @@
+C51 COMPILER V9.01   HX711                                                                 03/30/2021 23:22:53 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE HX711
+OBJECT MODULE PLACED IN HX711.OBJ
+COMPILER INVOKED BY: D:\Program Files (x86)\Keil_v4\C51\BIN\C51.EXE HX711.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          
+   2          #include <intrins.h>   // _nop()_
+   3          #include "HX711.h"
+   4          
+   5          
+   6          unsigned char   _gain   =       128;     // default channel A
+   7          long                    _offset =       0;               // 零点偏移
+   8          float                   _scale  =       1;               // 比例系数
+   9          
+  10          
+  11          // 延时
+  12          void Delay_hx711_us(void){
+  13   1              _nop_();
+  14   1              _nop_();
+  15   1      }
+  16          
+  17          // 读取HX711 DOUT数据
+  18          unsigned long HX711_Read(void)
+  19          {
+  20   1              unsigned long dat;
+  21   1              unsigned char i;
+  22   1              unsigned char m = 1;   // default gain == 128
+  23   1      
+  24   1              HX711_DOUT = 1;    // DOUT置1
+  25   1              Delay_hx711_us();
+  26   1              Delay_hx711_us();       
+  27   1              HX711_SCK = 0;     // SCK置0
+  28   1              dat = 0;
+  29   1      
+  30   1              // 等待HX711_DOUT下降沿到来
+  31   1              while(HX711_DOUT && i<50);       // AD转换未结束则等待 否则开始读取数据
+  32   1              {
+  33   2                      Delay_hx711_us();
+  34   2                      i++;
+  35   2              }
+  36   1              // 发送24个脉冲，读取24位数据
+  37   1              for(i = 0;i < 24;i++)   
+  38   1              {
+  39   2                      HX711_SCK = 1;     // SCK置1 发送一个脉冲 读取一位数据
+  40   2                      _nop_();
+  41   2                      _nop_();
+  42   2                      dat = dat << 1;  // 下降沿来时dat变量左移一位 右侧补零
+  43   2                      HX711_SCK = 0;
+  44   2                      if(HX711_DOUT)  // DOUT为高电平 count+1
+  45   2                              dat++;
+  46   2              }
+  47   1              
+  48   1              if(_gain == 64) m = 3;
+  49   1              if(_gain == 32) m = 2;
+  50   1      
+  51   1              while(m > 0) {
+  52   2                      // 第25个脉冲 增益为128
+  53   2                      HX711_SCK = 1;
+  54   2                      /* 把采集到的值与0x800000进行“异或”运算 
+  55   2                         HX711直接取出来的数值，是
+C51 COMPILER V9.01   HX711                                                                 03/30/2021 23:22:53 PAGE 2   
+
+  56   2                         以补码的形式出现的，并且是有符号的值 */
+  57   2                      dat = dat ^ 0x800000;  /* 下降沿来时 转换数据   */
+  58   2                      Delay_hx711_us();
+  59   2                      HX711_SCK = 0;
+  60   2                      m--;
+  61   2              }
+  62   1              return(dat);
+  63   1      }
+  64          /* 取平均值 multiple raw reads */
+  65          unsigned long AD_average(unsigned char times) {
+  66   1              
+  67   1              unsigned long sum = 0;
+  68   1              unsigned char i = 0;
+  69   1              for(i = times; i > 0; i--) 
+  70   1              {
+  71   2                      sum += HX711_Read();
+  72   2              }
+  73   1              return (unsigned long)(sum / times);
+  74   1      }
+  75          
+  76          /* 校准 得到比例系数*/
+  77          void callibrate_scale(unsigned int weight, unsigned char times) {
+  78   1      
+  79   1              _scale = (1.0 * weight) / (AD_average(times) - _offset);
+  80   1      }
+  81          /* 得到实际值 */
+  82          float get_units(unsigned char times) {
+  83   1      
+  84   1              float units;
+  85   1              units =  (AD_average(times) - _offset) * _scale;
+  86   1              return units;
+  87   1      }
+  88          // TARE 设置零点偏移AD
+  89          /* call tare to calibrate zero */
+  90          void tare(unsigned char times) { 
+  91   1      
+  92   1              _offset = AD_average(times); 
+  93   1      }
+  94          /* 获取实际零点偏移*/
+  95          float get_tare(void) { 
+  96   1      
+  97   1              return -_offset * _scale; 
+  98   1      }
+  99          /* 设置HX711增益 */
+ 100          void set_gain(unsigned char gain) { 
+ 101   1      
+ 102   1              _gain = gain; 
+ 103   1      }
+ 104          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    312    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      9       7
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

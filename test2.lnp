@@ -1,0 +1,8 @@
+"main.obj",
+"lcd.obj",
+"uart.obj",
+"HX711.obj",
+"app.obj",
+"timer0.obj",
+"key.obj" 
+TO "test2" 

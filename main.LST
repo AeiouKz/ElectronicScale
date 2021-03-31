@@ -1,0 +1,86 @@
+C51 COMPILER V9.01   MAIN                                                                  03/30/2021 23:22:53 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN main.OBJ
+COMPILER INVOKED BY: D:\Program Files (x86)\Keil_v4\C51\BIN\C51.EXE main.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          
+   2          
+   3          #include <reg51.h>
+   4          
+   5          #include "app.h"        
+   6          #include "lcd.h"        
+   7          #include "uart.h"       
+   8          #include "HX711.h"      
+   9          #include "timer0.h"     
+  10          #include "key.h"
+  11          
+  12          sbit led = P1^3;                
+  13          /* 主函数入口 */
+  14          void main(void) {
+  15   1              unsigned char i = 0;
+  16   1              unsigned int weight;
+  17   1              unsigned long refAD;
+  18   1      
+  19   1              P0 = P1 = P2 = P3 = 0xFF;
+  20   1      
+  21   1              Lcd1602Init();  /* LCD初始化 */
+  22   1              uartInit();             /* UART初始化*/
+  23   1              timer0Init();   /* Timer0初始化 */      
+  24   1              EA = 1;                 /* 总中断允许 */
+  25   1                                      
+  26   1      
+  27   1              refAD = AD_average(10);
+  28   1      
+  29   1      
+  30   1              /* 程序不断运行中 */
+  31   1              while(1) {
+  32   2      
+  33   2                      refAD = AD_average(5);  
+  34   2                      weight = (unsigned int)(refAD/100+0.5); 
+  35   2                      led=0;
+  36   2      
+  37   2      
+  38   2                      
+  39   2                      /* 按键处理 */
+  40   2                      keyPros();
+  41   2      
+  42   2                      /* LCD显示进程 */
+  43   2                      if(flag_time&0x02) {
+  44   3                              flag_time &= ~0x02;      // 清除标志位
+  45   3                              LcdDisp(weight);
+  46   3                              delay_ms(5);
+  47   3                      }
+  48   2      
+  49   2                      /* uart发送串行口数据进程 */            
+  50   2                      if(flag_time&0x04) {            // 1秒钟闪一次，发送一次数据
+  51   3                              flag_time &= ~0x04;
+  52   3                              BTSend(DisBuf); 
+  53   3                              led=1;
+  54   3                      }
+  55   2      
+C51 COMPILER V9.01   MAIN                                                                  03/30/2021 23:22:53 PAGE 2   
+
+  56   2                      /* uart接收串行口数据进程 */    
+  57   2                      BTRecv(buffer);
+  58   2      
+  59   2              }
+  60   1      }
+  61          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    136    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       7
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

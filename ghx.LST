@@ -1,0 +1,83 @@
+C51 COMPILER V9.01   GHX                                                                   03/10/2021 15:33:32 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE GHX
+OBJECT MODULE PLACED IN ghx.OBJ
+COMPILER INVOKED BY: D:\Program Files (x86)\Keil_v4\C51\BIN\C51.EXE ghx.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          
+   2          
+   3          #include "ghx.h"
+   4          
+   5          #include "HX711.h"
+   6          #include "lcd.h"
+   7          #include "uart.h"
+   8          
+   9          
+  10          uint8_t DisBuf[6] = {0};
+  11          /* 数据显示 */
+  12          void LcdDisp(uint16_t value) { 
+  13   1              uint8_t i = 0;
+  14   1              DisBuf[0] = value / 100000 % 10;
+  15   1              DisBuf[1] = value / 10000 % 10;
+  16   1              DisBuf[2] = value / 1000 % 10;
+  17   1              DisBuf[3] = value / 100 % 10;
+  18   1              DisBuf[4] = value / 10 % 10;
+  19   1              DisBuf[5] = value % 10;
+  20   1      
+  21   1              LcdWriteCom(0x80+0x40);
+  22   1              do{
+  23   2                      LcdWriteData('0'+DisBuf[i]);
+  24   2                      i++;
+  25   2                      if(i == 3) {
+  26   3                              LcdWriteData('.');
+  27   3                      }
+  28   2                       
+  29   2              }while(i < 6);  
+  30   1      }
+  31          
+  32          uint8_t buffer[6]= {' '};
+  33          uint8_t cnt = 0; 
+  34          /* BT蓝牙接收数据 */ 
+  35          void BTRecv(void) {
+  36   1              if(flag_recv && (!flag_send)) {                 
+  37   2                      flag_recv = 0;
+  38   2                      buffer[cnt] = SBUF;
+  39   2                      LcdWriteChr(10,1,buffer[cnt]);
+  40   2                      cnt++;
+  41   2                      if(6 == cnt) {
+  42   3                              cnt = 0;
+  43   3                      }
+  44   2              }
+  45   1      }
+  46          /* BT蓝牙发送数据 */
+  47          void BTSend(void) {
+  48   1              uint8_t i = 0;
+  49   1              uartSendStr("您的体重为:");
+  50   1              do{
+  51   2                      uartSendChr(DisBuf[i++]);
+  52   2              }while(i < 6);
+  53   1              uartSendStr("kg！");
+  54   1      }
+  55          
+C51 COMPILER V9.01   GHX                                                                   03/10/2021 15:33:32 PAGE 2   
+
+  56          
+  57          
+  58          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    245    ----
+   CONSTANT SIZE    =     17    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     13       4
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
